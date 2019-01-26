@@ -5,14 +5,18 @@ import { List, ListItem } from "../components/List";
 import { Input, TextArea, FormBtn } from "../components/Form";
 import { get } from "http";
 import axios from "axios";
+import { Route, Redirect } from 'react-router';
+
 
 class Signup extends Component {
   state = {
     signUp: [],
     firstName: '',
     lastName: '',
+    Email: '',
     userName: '',
-    email: ''
+    password: '',
+    isRegistered: false
   };
 
   handleInputChange = event => {
@@ -25,19 +29,26 @@ class Signup extends Component {
     const newUser = {
       firstName: this.state.firstName,
       lastName: this.state.lastName,
-      userName: this.state.userName,
-      email: this.state.email
+      email: this.state.email,
+      username: this.state.username,
+      password: this.state.password,
     };
     console.log(newUser)
     axios.post('/api/users', newUser)
       .then((result) => {
-        console.log(result)
+        console.log(result);
+        this.setState({ 
+          isRegistered: true
+         });
         //access the results here....
       });
   };
   
   render() {
     const { firstName } = this.state;
+    if (this.state.isRegistered === true) {
+      return <Redirect to='/login' />
+    }
 
     return (
       <Container fluid>
@@ -59,16 +70,22 @@ class Signup extends Component {
                 placeholder="Last Name"
               />
               <Input
-                value={this.state.userName}
+                value={this.state.email}
                 onChange={this.handleInputChange}
-                name="userName"
+                name="email"
+                placeholder="E-mail"
+              />
+              <Input
+                value={this.state.username}
+                onChange={this.handleInputChange}
+                name="username"
                 placeholder="User Name"
               />
               <Input
-                value={this.state.firstName}
+                value={this.state.password}
                 onChange={this.handleInputChange}
-                name="email"
-                placeholder="e-mail"
+                name="password"
+                placeholder="Password"
               />
               
               <FormBtn
