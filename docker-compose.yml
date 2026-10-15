@@ -1,0 +1,36 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: gamerfeed_db
+      MARIADB_USER: gamerfeed
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: mysql://gamerfeed:${DB_PASSWORD}@db:3306/gamerfeed_db
+      GAME_API_KEY: ${GAME_API_KEY}
+      GAME_API_BASE_URL: ${GAME_API_BASE_URL:-https://api.rawg.io/api}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      YOUTUBE_API_BASE_URL: ${YOUTUBE_API_BASE_URL:-https://www.googleapis.com/youtube/v3}
+    ports:
+      - "${APP_PORT:-80}:3001"
+
+volumes:
+  db_data:

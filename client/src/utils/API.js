@@ -1,32 +1,23 @@
 import axios from "axios";
 
+// All game data goes through the Express server (routes/api/games.js),
+// which holds the API key and talks to RAWG.
 export default {
   // Get all search results
   getSearch: function(title) {
-    return axios.get
-    ("https://cors-anywhere.herokuapp.com/https://www.giantbomb.com/api/search/?api_key=4b4ba55b0118821989326754d56880f35e4178e0&format=json&query="+title+"&resources=game");
+    return axios.get("/api/games/search", { params: { q: title } });
   },
+  // Gets a list of popular games
   getGames: function() {
-    return axios.get
-    ("https://cors-anywhere.herokuapp.com/https://www.giantbomb.com/api/reviews/?format=json&api_key=4b4ba55b0118821989326754d56880f35e4178e0");
-    // ("https://cors-anywhere.herokuapp.com/https://www.giantbomb.com/api/games/?api_key=4b4ba55b0118821989326754d56880f35e4178e0&format=json");
+    return axios.get("/api/games/popular");
   },
-
-  // Gets all game reviews
-  getGameRating: function(guid) {
-    return axios.get
-    ("https://cors-anywhere.herokuapp.com/https://www.giantbomb.com/api/review/"+guid+"/?api_key=4b4ba55b0118821989326754d56880f35e4178e0&format=json");
+  // Gets one game's details (description, rating)
+  getGame: function(id) {
+    return axios.get("/api/games/" + id);
   },
-  // Gets a list of games that have a Youtube video
-  getYouTubeVideo: function(guid) {
-    return axios.get
-    ("https://cors-anywhere.herokuapp.com/https://www.giantbomb.com/api/video/"+guid+"/?format=json&api_key=4b4ba55b0118821989326754d56880f35e4178e0");
-  },
-  // Gets a Youtube video for a game
-  getYouTubeVideos: function() {
-    return axios.get
-    ("https://cors-anywhere.herokuapp.com/https://www.giantbomb.com/api/videos/?format=json&api_key=4b4ba55b0118821989326754d56880f35e4178e0");
+  // Gets a trailer for a game
+  getTrailer: function(id) {
+    return axios.get("/api/games/" + id + "/trailer");
   },
 
 };
-

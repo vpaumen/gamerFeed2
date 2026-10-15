@@ -3,15 +3,14 @@ const db = require("../models/index");
 module.exports = {
   findAll: function(req, res) {
     db.User
-      .find(req.query)
-      .sort({ date: -1 })
+      .findAll({ where: req.query, order: [["createdAt", "DESC"]] })
       .then(dbModel => res.json(dbModel))
       .catch(err => res.status(422).json(err));
   },
   findById: function(req, res) {
     db.User
-      .findById(req.params.id)
-      .then(dbModel => res.json(dbModel))
+      .findByPk(req.params.id)
+      .then(dbModel => dbModel ? res.json(dbModel) : res.sendStatus(404))
       .catch(err => res.status(422).json(err));
   },
   create: function(req, res) {
@@ -22,7 +21,6 @@ module.exports = {
       username: req.body.username,
       password: req.body.password
     };
-    console.log(newUser);
 
     db.User
       .create(newUser)
@@ -31,15 +29,14 @@ module.exports = {
   },
   update: function(req, res) {
     db.User
-      .findOneAndUpdate({ _id: req.params.id }, req.body)
-      .then(dbModel => res.json(dbModel))
+      .findByPk(req.params.id)
+      .then(dbModel => dbModel ? dbModel.update(req.body).then(updated => res.json(updated)) : res.sendStatus(404))
       .catch(err => res.status(422).json(err));
   },
   remove: function(req, res) {
     db.User
-      .findById({ _id: req.params.id })
-      .then(dbModel => dbModel.remove())
-      .then(dbModel => res.json(dbModel))
+      .findByPk(req.params.id)
+      .then(dbModel => dbModel ? dbModel.destroy().then(() => res.json(dbModel)) : res.sendStatus(404))
       .catch(err => res.status(422).json(err));
   }
 };

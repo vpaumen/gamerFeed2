@@ -29,5 +29,9 @@ db.sequelize.sync().then(function() {
   app.listen(PORT, function() {
     console.log("App now listening on port:", PORT);
   });
+}).catch(function(err) {
+  // Exit so Docker's restart policy retries if the database isn't reachable yet
+  console.error("Database connection failed:", err.message);
+  process.exit(1);
 });
 

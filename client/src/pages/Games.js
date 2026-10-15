@@ -7,7 +7,6 @@ import { Col, Row, Container } from "../components/Grid";
 import { List, ListItem } from "../components/List";
 import { Input, TextArea, FormBtn } from "../components/Form";
 import { get } from "http";
-import YouTube from 'react-youtube';
 import ReactHtmlParser, { processNodes, convertNodeToElement, htmlparser2 } from 'react-html-parser';
 
 
@@ -63,39 +62,44 @@ class Games extends Component {
   };
 
 
-  setDescription = description => {
-    if (description) {
-        this.setState({ description: description });
-        gameDescription=description;
+  // Calls on API to get the description of one game from the search results
+  setDescription = id => {
+    if (id) {
+      API.getGame(id)
+        .then(res => {
+          this.setState({ description: res.data.results.description });
+          gameDescription = res.data.results.description;
+        })
+        .catch(err => console.log(err));
     }
   };
   
-// Calls on API to get a list of games with a Rating from 1-5
-getGameRatings = guid => {
-  if (guid) {
-    API.getGameRating(guid)
-      .then(res => this.setState({ gameReview: res.data.results.score }))
+// Calls on API to get a game's Rating from 1-5
+getGameRatings = id => {
+  if (id) {
+    API.getGame(id)
+      .then(res => this.setState({ gameReview: res.data.results.rating || "Not rated" }))
       .catch(err => console.log(err));
   }
 };
 
-// Calls on API to get a list of games with a YouTube video
+// Calls on API to get a list of games to pick a trailer from
 getGameVideos = () => {
-  API.getYouTubeVideos()
+  API.getGames()
   .then(res => {
-    this.setState({ games: res.data.results, isComingFromVideo: true })
+    this.setState({ games: res.data.results, isComingFromVideo: true, isComingFromSearch: false, gameVideo: "" })
   }
 )
 .catch(err => console.log(err));
 
 };
 
-// Calls on API to pull one video from the list of games that have videos
-getGameVideo = (guid) => {
-  if (guid) {
-  API.getYouTubeVideo(guid)
+// Calls on API to pull the trailer for one game ("none" when RAWG has no trailer)
+getGameVideo = (id) => {
+  if (id) {
+  API.getTrailer(id)
   .then(res => {
-    this.setState({ gameVideo: res.data.results.youtube_id, isComingFromVideo: true })
+    this.setState({ gameVideo: res.data.results || "none", isComingFromVideo: true })
   }
 )
 .catch(err => console.log(err));
@@ -114,7 +118,7 @@ getGameVideo = (guid) => {
       <List>
         {this.state.games.map(game => (
               <strong>
-                <li data-id={game.guid} onClick={() => this.getGameRatings(game.guid)}>{game.game.name} </li>
+                <li key={game.id} data-id={game.id} onClick={() => this.getGameRatings(game.id)}>{game.name} </li>
               </strong>
         ))}
       </List></div>;
@@ -123,7 +127,7 @@ getGameVideo = (guid) => {
       <List>
         {this.state.games.map(game => (
               <strong>
-                <li data-id={game.guid} onClick={() => this.setDescription(game.description)}>{game.name} </li>
+                <li key={game.id} data-id={game.id} onClick={() => this.setDescription(game.id)}>{game.name} </li>
               </strong>
         ))}
       </List></div>;
@@ -132,15 +136,19 @@ getGameVideo = (guid) => {
       <List>
         {this.state.games.map(game => (
               <strong>
-                <li data-id={game.guid} onClick={() => this.getGameVideo(game.guid)}>{game.name} </li>
+                <li key={game.id} data-id={game.id} onClick={() => this.getGameVideo(game.id)}>{game.name} </li>
               </strong>
         ))}
       </List></div>;
       
-      if (this.state.gameVideo) {
+      if (this.state.gameVideo === "none") {
+        html_video = <h2>No trailer available for this game.</h2>;
+      } else if (this.state.gameVideo.source === "youtube") {
         html_video=
-        // <h2><a href={`https://www.youtube.com/watch?v=${this.state.gameVideo}`} >YouTube video</a></h2>;
-        <iframe width="560" height="315" src={`https://www.youtube.com/embed/${this.state.gameVideo}`} frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+        <iframe key={this.state.gameVideo.youtubeId} width="560" height="315" src={`https://www.youtube.com/embed/${this.state.gameVideo.youtubeId}`} title={this.state.gameVideo.name} frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+      } else if (this.state.gameVideo) {
+        html_video=
+        <video key={this.state.gameVideo.url} width="560" src={this.state.gameVideo.url} controls autoPlay></video>
        }
 
     }
@@ -193,6 +201,7 @@ getGameVideo = (guid) => {
               </FormBtn>
 
 {html}
+            <p className="attribution">Game data from <a href="https://rawg.io" target="_blank" rel="noopener noreferrer">RAWG</a></p>
           </div>
         </div>
       </Container>

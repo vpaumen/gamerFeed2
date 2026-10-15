@@ -18,4 +18,4 @@ To get videos of games, click on the Videos button and a list of games with vide
 
 Special thanks to Ed Orsini and the TA's Marquet and Christina.
 
-Special thanks to the GiantBomb API.
+Game data is provided by [RAWG](https://rawg.io).
