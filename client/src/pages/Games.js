@@ -1,28 +1,22 @@
 import React, { Component } from "react";
-import DeleteBtn from "../components/DeleteBtn";
 import Jumbotron from "../components/Jumbotron";
 import API from "../utils/API";
-import { Link } from "react-router-dom";
-import { Col, Row, Container } from "../components/Grid";
-import { List, ListItem } from "../components/List";
-import { Input, TextArea, FormBtn } from "../components/Form";
-import { get } from "http";
-import ReactHtmlParser, { processNodes, convertNodeToElement, htmlparser2 } from 'react-html-parser';
+import { List, GameRow } from "../components/List";
+import { Input, FormBtn } from "../components/Form";
+import ReactHtmlParser from 'react-html-parser';
 
 
-let gameDescription = "";
 class Games extends Component {
-  
+
   state = {
-    search: [],
     games: [],
-    reviews: [],
     gameReview: "",
     isComingFromSearch: false,
     gameVideo: "",
     isComingFromVideo: false,
     description: "",
-    
+    selectedId: null,
+    selectedName: "",
   };
 
   componentDidMount() {
@@ -32,11 +26,11 @@ class Games extends Component {
   loadGames = () => {
     API.getGames()
       .then(res => {
-        // console.log('res.data.results >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',res.data.results[0].guid);
-        this.setState({ 
+        this.setState({
           games: res.data.results,
           isComingFromVideo: false,
           isComingFromSearch: false,
+          selectedId: null,
          })
       }
     )
@@ -56,24 +50,24 @@ class Games extends Component {
     event.preventDefault();
     if (this.state.title) {
       API.getSearch(this.state.title)
-        .then(res => this.setState({ games: res.data.results, isComingFromSearch: true }))
+        .then(res => this.setState({ games: res.data.results, isComingFromSearch: true, isComingFromVideo: false, selectedId: null }))
         .catch(err => console.log(err));
     }
   };
 
+  selectGame = game => {
+    this.setState({ selectedId: game.id, selectedName: game.name });
+  };
 
   // Calls on API to get the description of one game from the search results
   setDescription = id => {
     if (id) {
       API.getGame(id)
-        .then(res => {
-          this.setState({ description: res.data.results.description });
-          gameDescription = res.data.results.description;
-        })
+        .then(res => this.setState({ description: res.data.results.description }))
         .catch(err => console.log(err));
     }
   };
-  
+
 // Calls on API to get a game's Rating from 1-5
 getGameRatings = id => {
   if (id) {
@@ -87,7 +81,7 @@ getGameRatings = id => {
 getGameVideos = () => {
   API.getGames()
   .then(res => {
-    this.setState({ games: res.data.results, isComingFromVideo: true, isComingFromSearch: false, gameVideo: "" })
+    this.setState({ games: res.data.results, isComingFromVideo: true, isComingFromSearch: false, gameVideo: "", selectedId: null })
   }
 )
 .catch(err => console.log(err));
@@ -106,105 +100,125 @@ getGameVideo = (id) => {
   }
 };
 
+  // What clicking a game does depends on how the list was loaded
+  handleGameClick = game => {
+    this.selectGame(game);
+    if (this.state.isComingFromVideo) {
+      this.getGameVideo(game.id);
+    } else if (this.state.isComingFromSearch) {
+      this.setDescription(game.id);
+    } else {
+      this.getGameRatings(game.id);
+    }
+  };
+
+  renderVideo() {
+    const video = this.state.gameVideo;
+    if (!video) return null;
+    if (video === "none") {
+      return <p className="hint">No trailer available for this game.</p>;
+    }
+    return (
+      <div className="video-frame">
+        {video.source === "youtube" ? (
+          <iframe key={video.youtubeId} src={`https://www.youtube.com/embed/${video.youtubeId}`} title={video.name} frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+        ) : (
+          <video key={video.url} src={video.url} controls autoPlay></video>
+        )}
+      </div>
+    );
+  }
 
   render() {
-    let html=""; 
-    
-    let html_video= "";
+    const { games, isComingFromSearch, isComingFromVideo, selectedId, selectedName } = this.state;
 
-    
-    if(this.state.games.length && !this.state.isComingFromSearch && !this.state.isComingFromVideo)  { 
-      html=<div className="results">
-      <List>
-        {this.state.games.map(game => (
-              <strong>
-                <li key={game.id} data-id={game.id} onClick={() => this.getGameRatings(game.id)}>{game.name} </li>
-              </strong>
-        ))}
-      </List></div>;
-    } else if(this.state.isComingFromSearch) {
-      html=<div className="results">
-      <List>
-        {this.state.games.map(game => (
-              <strong>
-                <li key={game.id} data-id={game.id} onClick={() => this.setDescription(game.id)}>{game.name} </li>
-              </strong>
-        ))}
-      </List></div>;
-    } else if(this.state.isComingFromVideo) {
-      html=<div className="results">
-      <List>
-        {this.state.games.map(game => (
-              <strong>
-                <li key={game.id} data-id={game.id} onClick={() => this.getGameVideo(game.id)}>{game.name} </li>
-              </strong>
-        ))}
-      </List></div>;
-      
-      if (this.state.gameVideo === "none") {
-        html_video = <h2>No trailer available for this game.</h2>;
-      } else if (this.state.gameVideo.source === "youtube") {
-        html_video=
-        <iframe key={this.state.gameVideo.youtubeId} width="560" height="315" src={`https://www.youtube.com/embed/${this.state.gameVideo.youtubeId}`} title={this.state.gameVideo.name} frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-      } else if (this.state.gameVideo) {
-        html_video=
-        <video key={this.state.gameVideo.url} width="560" src={this.state.gameVideo.url} controls autoPlay></video>
-       }
+    let listTitle = "Popular games";
+    if (isComingFromSearch) listTitle = "Search results";
+    else if (isComingFromVideo) listTitle = "Pick a game to watch its trailer";
 
-    }
 // Returns Search, Videos and Description of Game
     return (
-      <Container fluid>
-        <div className="d-flex justify-content-center">
-          <div className="col-md-6">
+      <div className="page">
+        <div className="games-layout">
+          <section className="panel">
             <Jumbotron>
-              <h1>What Games Should I Search? Type it below.</h1>
+              <h1>What games should I search?</h1>
             </Jumbotron>
-            <form>
+            <form className="search-form" onSubmit={this.handleFormSubmit}>
               <Input
-                value={this.state.title}
+                value={this.state.title || ""}
                 onChange={this.handleInputChange}
                 name="title"
-                placeholder="Game Title (required)"
+                placeholder="Game title"
               />
-              
-              <FormBtn
-                onClick={this.handleFormSubmit}
-              >
-                Search
-              </FormBtn>
-
+              <FormBtn type="submit">Search</FormBtn>
             </form>
-            <div className="description">
-            <h2>Description: { ReactHtmlParser(this.state.description) }</h2>
-            {html_video}
-            </div>
-          </div>
-          <div className="col-md-6 col-sm-12">
-            <Jumbotron>
-              <h1>Game Rating 1-5</h1>
-              
-              <h2>Rating: {this.state.gameReview}</h2>
-            
-            </Jumbotron>
-            
-            <FormBtn
-                onClick={this.getGameVideos}
-              >
-                Videos
-              </FormBtn>
 
-            <FormBtn
+            {isComingFromVideo ? (
+              <div className="description">
+                <h2 className="panel-title" style={{ marginTop: "1.5rem" }}>
+                  {selectedId ? selectedName : "Trailer"}
+                </h2>
+                {this.renderVideo() || <p className="hint">Pick a game from the list to watch its trailer.</p>}
+              </div>
+            ) : (
+              <div className="description">
+                <h2 className="panel-title" style={{ marginTop: "1.5rem" }}>
+                  {selectedId && isComingFromSearch ? selectedName : "Description"}
+                </h2>
+                {this.state.description
+                  ? ReactHtmlParser(this.state.description)
+                  : <p className="hint">Search for a game, then pick a result to read about it.</p>}
+              </div>
+            )}
+          </section>
+
+          <section className="panel">
+            <div className="mode-toggle" role="tablist">
+              <button
+                type="button"
+                className={!isComingFromVideo ? "active" : ""}
                 onClick={this.loadGames}
               >
                 Ratings
-              </FormBtn>
+              </button>
+              <button
+                type="button"
+                className={isComingFromVideo ? "active" : ""}
+                onClick={this.getGameVideos}
+              >
+                Videos
+              </button>
+            </div>
 
-{html}
+            {!isComingFromVideo && !isComingFromSearch && (
+              <div className="rating-display">
+                <span className="rating-value">{this.state.gameReview || "–"}</span>
+                <span className="rating-scale">
+                  {this.state.gameReview && selectedName ? `/ 5 · ${selectedName}` : "/ 5 · pick a game"}
+                </span>
+              </div>
+            )}
+
+            <h2 className="panel-title">{listTitle}</h2>
+            {games.length ? (
+              <div className="results">
+                <List>
+                  {games.map(game => (
+                    <GameRow
+                      key={game.id}
+                      game={game}
+                      selected={game.id === selectedId}
+                      onClick={() => this.handleGameClick(game)}
+                    />
+                  ))}
+                </List>
+              </div>
+            ) : null}
             <p className="attribution">Game data from <a href="https://rawg.io" target="_blank" rel="noopener noreferrer">RAWG</a></p>
-          </div>
+          </section>
         </div>
-      </Container>
+      </div>
     );
   }
 }

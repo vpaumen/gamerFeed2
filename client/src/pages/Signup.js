@@ -1,11 +1,7 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
-import { Col, Row, Container } from "../components/Grid";
-import { List, ListItem } from "../components/List";
-import { Input, TextArea, FormBtn } from "../components/Form";
-import { get } from "http";
+import { Input, FormBtn } from "../components/Form";
 import axios from "axios";
-import { Route, Redirect } from 'react-router';
+import { Redirect } from 'react-router';
 
 
 class Signup extends Component {
@@ -51,12 +47,11 @@ class Signup extends Component {
     }
 
     return (
-      <Container fluid>
-        <div className="d-flex justify-content-center">
-          <Col size="md-6">
+      <div className="page">
+        <div className="panel auth-card">
             <form>
-              <h1 class="signup-text">Welcome to GamerFeed!</h1>
-              <h1>Please sign up</h1>
+              <h1>Welcome to GamerFeed!</h1>
+              <p className="subtitle">Create an account to start exploring games.</p>
               <Input
                 value={this.state.firstName}
                 onChange={this.handleInputChange}
@@ -95,9 +90,8 @@ class Signup extends Component {
                 Submit
               </FormBtn>
             </form>
-          </Col>
         </div>
-      </Container>
+      </div>
     );
   }
 }
