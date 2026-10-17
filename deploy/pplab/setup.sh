@@ -22,7 +22,8 @@ if ! command -v docker >/dev/null; then
 fi
 
 if [ ! -d "$APP_DIR/.git" ]; then
-  git clone "$REPO" "$APP_DIR"
+  # Deploys only ever run master; work happens on improvements-branch and is merged in first
+  git clone --branch master "$REPO" "$APP_DIR"
 fi
 
 if [ ! -f "$APP_DIR/.env" ]; then

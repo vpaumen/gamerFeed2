@@ -39,9 +39,11 @@ Open `http://<container-ip>/`. The first build takes a few minutes.
 
 ## Day-to-day
 
+All work is pushed to `improvements-branch`. Deploy only after it has been merged into `master`; the server always runs `master`.
+
 | Task | Command (in `/opt/gamerfeed`) |
 |---|---|
-| Update to latest code | `git pull && docker compose up -d --build` |
+| Update to latest code (after merging into `master`) | `git checkout master && git pull origin master && docker compose up -d --build` |
 | Logs | `docker compose logs -f app` |
 | Load demo users | `docker compose exec app npx sequelize db:seed:all --env production` |
 | DB shell | `docker compose exec db mariadb -u gamerfeed -p gamerfeed_db` |
